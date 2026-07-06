@@ -213,6 +213,23 @@ Voir aussi :
 docs/langgraph_studio_demo.md
 ```
 
+## Screenshots
+
+### Application mobile - rapport final
+
+![Rapport final mobile](docs/screenshots/mobile-final-report.png)
+
+### Emplacements pour captures supplementaires
+
+Ajoute les prochaines captures dans `docs/screenshots/`, puis reference-les ici :
+
+```markdown
+![Cas patient](docs/screenshots/mobile-patient-case.png)
+![Questions patient](docs/screenshots/mobile-patient-questions.png)
+![Revue medecin](docs/screenshots/mobile-physician-review.png)
+![LangGraph Studio](docs/screenshots/langgraph-studio.png)
+```
+
 ## Limites
 
 - Les consultations sont stockees en memoire avec `SESSIONS`; elles disparaissent au redemarrage du backend.

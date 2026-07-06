@@ -64,6 +64,7 @@ def test_full_consultation_workflow():
 
     review_response = client.post(
         "/consultation/resume",
+        headers={"X-Physician-Token": "demo-physician-token"},
         json={
             "thread_id": thread_id,
             "physician_treatment": (
@@ -78,3 +79,57 @@ def test_full_consultation_workflow():
 
     assert final_state["final_report"]
     assert "Ce systeme ne remplace pas une consultation medicale." in final_state["final_report"]
+
+
+def test_physician_review_requires_token():
+    start_response = client.post(
+        "/consultation/start",
+        json={"patient_case": "Patient avec toux"},
+    )
+    thread_id = start_response.json()["thread_id"]
+
+    response = client.post(
+        "/consultation/resume",
+        json={
+            "thread_id": thread_id,
+            "physician_treatment": "Traitement test",
+        },
+    )
+
+    assert response.status_code == 401
+
+
+def test_report_pdf_endpoint_returns_pdf():
+    start_response = client.post(
+        "/consultation/start",
+        json={"patient_case": "Patient de 28 ans avec toux et fievre depuis 2 jours"},
+    )
+    state = start_response.json()
+    thread_id = state["thread_id"]
+
+    for answer in [
+        "Depuis 2 jours.",
+        "Oui, fievre moderee.",
+        "Non, pas de douleur importante.",
+        "Non, pas de difficulte a respirer.",
+        "Aucun antecedent medical important.",
+    ]:
+        state = client.post(
+            "/consultation/resume",
+            json={"thread_id": thread_id, "patient_answer": answer},
+        ).json()
+
+    client.post(
+        "/consultation/resume",
+        headers={"X-Physician-Token": "demo-physician-token"},
+        json={
+            "thread_id": thread_id,
+            "physician_treatment": "Repos et surveillance.",
+        },
+    )
+
+    response = client.get(f"/consultation/{thread_id}/report/pdf")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content.startswith(b"%PDF")

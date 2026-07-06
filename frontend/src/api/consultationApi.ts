@@ -1,6 +1,7 @@
 import { ConsultationState } from "../types/consultation";
 
 const API_URL = "http://localhost:8000";
+const PHYSICIAN_REVIEW_TOKEN = "demo-physician-token";
 
 export async function startConsultation(patientCase: string): Promise<ConsultationState> {
   const response = await fetch(`${API_URL}/consultation/start`, {
@@ -25,11 +26,17 @@ export async function resumeConsultation(params: {
   patientAnswer?: string;
   physicianTreatment?: string;
 }): Promise<ConsultationState> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (params.physicianTreatment) {
+    headers["X-Physician-Token"] = PHYSICIAN_REVIEW_TOKEN;
+  }
+
   const response = await fetch(`${API_URL}/consultation/resume`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify({
       thread_id: params.threadId,
       patient_answer: params.patientAnswer,

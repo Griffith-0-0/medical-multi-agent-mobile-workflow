@@ -1,31 +1,39 @@
-from typing import Any, Dict, List, Optional, Union
-
-from fastapi import FastAPI
-from pydantic import BaseModel
+from mcp.server.fastmcp import FastMCP
 
 
-app = FastAPI(title="Medical MCP Server")
+mcp = FastMCP(
+    "medical-care-tools",
+    instructions=(
+        "Expose des outils pedagogiques pour un workflow academique "
+        "d'orientation clinique preliminaire."
+    ),
+    host="127.0.0.1",
+    port=9000,
+    streamable_http_path="/mcp",
+    stateless_http=True,
+)
 
 
-class JsonRpcRequest(BaseModel):
-    jsonrpc: str = "2.0"
-    id: Optional[Union[str, int]] = None
-    method: str
-    params: Dict[str, Any] = {}
-
-
-def recommend_interim_care(patient_case: str, patient_answers: List[str]) -> str:
-    text = " ".join([patient_case, *patient_answers]).lower()
-    has_breathing_negation = (
+def _has_breathing_negation(text: str) -> bool:
+    return (
         "pas de difficulte a respirer" in text
         or "pas de difficulte respiratoire" in text
         or "pas d'essoufflement" in text
     )
 
+
+@mcp.tool()
+def recommend_interim_care(patient_case: str, patient_answers: list[str]) -> str:
+    """Produit une recommandation intermediaire prudente.
+
+    Cette fonction est pedagogique et ne remplace pas une consultation medicale.
+    """
+
+    text = " ".join([patient_case, *patient_answers]).lower()
     red_flags = ["douleur thoracique", "malaise", "confusion", "perte de connaissance"]
 
     if any(flag in text for flag in red_flags) or (
-        "difficulte a respirer" in text and not has_breathing_negation
+        "difficulte a respirer" in text and not _has_breathing_negation(text)
     ):
         return (
             "Presence possible de signaux d'alerte. Recommandation prudente: "
@@ -44,93 +52,8 @@ def recommend_interim_care(patient_case: str, patient_answers: List[str]) -> str
     )
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok", "service": "medical-mcp-server"}
+app = mcp.streamable_http_app()
 
 
-@app.post("/mcp")
-def handle_mcp_request(request: JsonRpcRequest):
-    if request.method == "initialize":
-        return {
-            "jsonrpc": "2.0",
-            "id": request.id,
-            "result": {
-                "protocolVersion": "2024-11-05",
-                "serverInfo": {
-                    "name": "medical-care-tools",
-                    "version": "1.0.0",
-                },
-                "capabilities": {
-                    "tools": {},
-                },
-            },
-        }
-
-    if request.method == "tools/list":
-        return {
-            "jsonrpc": "2.0",
-            "id": request.id,
-            "result": {
-                "tools": [
-                    {
-                        "name": "recommend_interim_care",
-                        "description": (
-                            "Produit une recommandation intermediaire prudente a partir "
-                            "du cas initial et des reponses patient."
-                        ),
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": {
-                                "patient_case": {"type": "string"},
-                                "patient_answers": {
-                                    "type": "array",
-                                    "items": {"type": "string"},
-                                },
-                            },
-                            "required": ["patient_case", "patient_answers"],
-                        },
-                    }
-                ]
-            },
-        }
-
-    if request.method == "tools/call":
-        tool_name = request.params.get("name")
-        arguments = request.params.get("arguments", {})
-
-        if tool_name != "recommend_interim_care":
-            return {
-                "jsonrpc": "2.0",
-                "id": request.id,
-                "error": {
-                    "code": -32601,
-                    "message": f"Tool inconnu: {tool_name}",
-                },
-            }
-
-        recommendation = recommend_interim_care(
-            patient_case=arguments.get("patient_case", ""),
-            patient_answers=arguments.get("patient_answers", []),
-        )
-        return {
-            "jsonrpc": "2.0",
-            "id": request.id,
-            "result": {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": recommendation,
-                    }
-                ]
-            },
-        }
-
-    return {
-        "jsonrpc": "2.0",
-        "id": request.id,
-        "error": {
-            "code": -32601,
-            "message": f"Methode inconnue: {request.method}",
-        },
-    }
+if __name__ == "__main__":
+    mcp.run(transport="streamable-http")

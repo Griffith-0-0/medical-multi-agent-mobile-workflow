@@ -9,3 +9,5 @@ httpx
 pytest
 pytest-asyncio
 typing-extensions
+mcp
+reportlab
