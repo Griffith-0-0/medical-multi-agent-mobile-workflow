@@ -215,20 +215,11 @@ docs/langgraph_studio_demo.md
 
 ## Screenshots
 
-### Application mobile - rapport final
-
-![Rapport final mobile](docs/screenshots/mobile-final-report.png)
-
-### Emplacements pour captures supplementaires
-
-Ajoute les prochaines captures dans `docs/screenshots/`, puis reference-les ici :
-
-```markdown
-![Cas patient](docs/screenshots/mobile-patient-case.png)
-![Questions patient](docs/screenshots/mobile-patient-questions.png)
-![Revue medecin](docs/screenshots/mobile-physician-review.png)
-![LangGraph Studio](docs/screenshots/langgraph-studio.png)
-```
+<p align="center">
+  <img src="docs/screenshots/mobile-patient-case.png" alt="Ecran cas patient" width="220" />
+  <img src="docs/screenshots/mobile-final-report-top.png" alt="Rapport final - debut" width="220" />
+  <img src="docs/screenshots/mobile-final-report-bottom.png" alt="Rapport final - fin" width="220" />
+</p>
 
 ## Limites
 
